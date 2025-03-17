@@ -54,20 +54,29 @@ def extract_improvement_areas(analysis_text):
     return improvements
 
 def search_youtube_videos(query):
-    """Search YouTube for videos related to the improvement areas."""
+    """Search YouTube for long-format educational videos/playlists, ordered by highest view count."""
     youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+    
     request = youtube.search().list(
         part="snippet",
         q=query,
-        maxResults=3
+        maxResults=3,
+        type="video,playlist",   
+        videoDuration="long",   
+        videoCategoryId="27",   
+        order="viewCount"       
     )
+    
     response = request.execute()
     
     video_urls = []
     for item in response.get("items", []):
-        if "videoId" in item["id"]:
+        kind = item["id"]["kind"]
+        if kind == "youtube#video":
             video_urls.append(f"https://www.youtube.com/watch?v={item['id']['videoId']}")
-    
+        elif kind == "youtube#playlist":
+            video_urls.append(f"https://www.youtube.com/playlist?list={item['id']['playlistId']}")
+
     return video_urls
 
 def main():
@@ -125,4 +134,5 @@ def main():
         print(f"\nAn error occurred: {str(e)}")
         raise
 
-main()
+if __name__ == "__main__":
+    main()
