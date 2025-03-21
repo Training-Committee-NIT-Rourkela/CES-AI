@@ -21,13 +21,32 @@ llama_llm = HuggingFaceHub(
     huggingfacehub_api_token=HUGGINGFACEHUB_API_TOKEN
 )
 
+@app.route("/upload_resume", methods = ["POST"])
+def upload_resume():
+    if "resume" not in request.files:
+        return jsonify({"error": "No file uploaded. Please attach a resume."}), 400, 0
+    file = request.files["resume"]
+    if file.filename == "":
+        return jsonify({"error": "No file selected. Please choose a resume to upload."}), 400, 0
+    check, ext = allowed_file(file.filename)
+    if file and check:
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        file.save(file_path)
+        return jsonify({"message": "Resume uploaded successfully", "file_path": file_path}), 200, file_path
+    return jsonify({"error": f"Invalid file format. You uploaded a {ext} file!. (Only PDF resumes are allowed)"}), 400, 0
+
 def extract_text_from_pdf(pdf_path):
     """Extract text from a PDF using PyMuPDF."""
-    doc = fitz.open(pdf_path)
-    text = ""
-    for page in doc:
-        text += page.get_text("text")
-    return text
+    path = upload_resume()
+    if path[2] != 0:
+        pdf_path = path[2]
+        doc = fitz.open(pdf_path)
+        text = ""
+        for page in doc:
+            text += page.get_text("text")
+        return text
+    return path[0]
 
 def analyze_resume_with_llama(combined_text: str):
     """Use Llama 3.2 to analyze a resume against a job description."""
