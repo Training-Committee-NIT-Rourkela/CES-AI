@@ -2,3 +2,5 @@ venv/
 .env
 JD.pdf
 resume.pdf
+.idea
+.DS_Store
